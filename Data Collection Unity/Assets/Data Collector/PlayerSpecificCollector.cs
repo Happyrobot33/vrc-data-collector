@@ -45,20 +45,24 @@ public class PlayerSpecificCollector : UdonSharpBehaviour
 
     void Start()
     {
-        //start the coroutine
-        _Coroutine();
+        //check if the local player owns this object
+        if (Networking.GetOwner(gameObject) == Networking.LocalPlayer)
+        {
+            //start the coroutine
+            _Coroutine();
+        }
     }
 
     public void _Coroutine()
     {
-        if (PlayerData.GetBool(Networking.GetOwner(gameObject), Key))
+        if (PlayerData.GetBool(Networking.LocalPlayer, Key))
         {
             FPS = 1f / Time.smoothDeltaTime;
             LeftEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Left);
             RightEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Right);
             LeftEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Left);
             RightEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Right);
-            VRCPlayerApi localPlayer = Networking.GetOwner(gameObject);
+            VRCPlayerApi localPlayer = Networking.LocalPlayer;
             HeadPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
             HeadRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
             LeftHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
