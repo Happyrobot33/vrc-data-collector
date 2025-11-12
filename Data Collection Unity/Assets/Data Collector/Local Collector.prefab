@@ -184,7 +184,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serializationData:
-    SerializedFormat: 2
+    SerializedFormat: 0
     SerializedBytes: 
     ReferencedUnityObjects: []
     SerializedBytesString: 
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serializationData:
-    SerializedFormat: 2
+    SerializedFormat: 0
     SerializedBytes: 
     ReferencedUnityObjects: []
     SerializedBytesString: 
@@ -1155,8 +1155,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3208795145150022211}
   - component: {fileID: 6820104613752972390}
-  - component: {fileID: 1358623505415879843}
-  - component: {fileID: 5625963095495241360}
+  - component: {fileID: 8951773391407160111}
+  - component: {fileID: 3424419286780206555}
   m_Layer: 0
   m_Name: Local Data
   m_TagString: Untagged
@@ -1191,7 +1191,7 @@ MonoBehaviour:
   m_Script: {fileID: 1658641376, guid: 661092b4961be7145bfbe56e1e62337b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &1358623505415879843
+--- !u!114 &8951773391407160111
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1204,7 +1204,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serializationData:
-    SerializedFormat: 2
+    SerializedFormat: 0
     SerializedBytes: 
     ReferencedUnityObjects: []
     SerializedBytesString: 
@@ -1212,7 +1212,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  _udonSharpBackingUdonBehaviour: {fileID: 5625963095495241360}
+  _udonSharpBackingUdonBehaviour: {fileID: 3424419286780206555}
   FPS: -1
   LeftEyePosition: {x: 0, y: 0, z: 0}
   RightEyePosition: {x: 0, y: 0, z: 0}
@@ -1224,7 +1224,8 @@ MonoBehaviour:
   RightHandRotation: {x: 0, y: 0, z: 0, w: 1}
   HeadPosition: {x: 0, y: 0, z: 0}
   HeadRotation: {x: 0, y: 0, z: 0, w: 1}
---- !u!114 &5625963095495241360
+  wawa: 0
+--- !u!114 &3424419286780206555
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -9,14 +9,14 @@ public class PlayerDataCollected
     [JsonProperty("player id")]
     public int playerid { get; set; }
     public Position position { get; set; }
-    [JsonProperty("left eye position")]
+/*     [JsonProperty("left eye position")]
     public Position lefteyeposition { get; set; }
     [JsonProperty("left eye rotation")]
     public Quaternion lefteyerotation { get; set; }
     [JsonProperty("right eye position")]
     public Position righteyeposition { get; set; }
     [JsonProperty("right eye rotation")]
-    public Quaternion righteyerotation { get; set; }
+    public Quaternion righteyerotation { get; set; } */
     [JsonProperty("head position")]
     public Position headposition { get; set; }
     [JsonProperty("head rotation")]

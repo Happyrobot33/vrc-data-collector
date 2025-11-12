@@ -9,21 +9,12 @@ using VRC.SDK3.Persistence;
 using UnityEngine.UI;
 using VRC.SDK3.Rendering;
 
-[RequireComponent(typeof(VRCPlayerObject))]
+//[RequireComponent(typeof(VRCPlayerObject))]
 [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class PlayerSpecificCollector : UdonSharpBehaviour
 {
     [UdonSynced]
-    public float FPS = -1;
-    [UdonSynced]
-    public Vector3 LeftEyePosition = Vector3.zero;
-    [UdonSynced]
-    public Vector3 RightEyePosition = Vector3.zero;
-
-    [UdonSynced]
-    public Quaternion LeftEyeRotation = Quaternion.identity;
-    [UdonSynced]
-    public Quaternion RightEyeRotation = Quaternion.identity;
+    public float FPS;
 
     [UdonSynced]
     public Vector3 LeftHandPosition = Vector3.zero;
@@ -41,7 +32,6 @@ public class PlayerSpecificCollector : UdonSharpBehaviour
     public Quaternion HeadRotation = Quaternion.identity;
 
     const float UpdateInterval = 0.5f;
-    private const string Key = "AllowedToCollect";
 
     void Start()
     {
@@ -55,21 +45,24 @@ public class PlayerSpecificCollector : UdonSharpBehaviour
 
     public void _Coroutine()
     {
-        if (PlayerData.GetBool(Networking.LocalPlayer, Key))
+        if (PlayerData.TryGetBool(Networking.LocalPlayer, GDPRComplianceControl.Key, out bool isAllowed))
         {
-            FPS = 1f / Time.smoothDeltaTime;
-            LeftEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Left);
-            RightEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Right);
-            LeftEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Left);
-            RightEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Right);
-            VRCPlayerApi localPlayer = Networking.LocalPlayer;
-            HeadPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-            HeadRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
-            LeftHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
-            LeftHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).rotation;
-            RightHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
-            RightHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).rotation;
-            RequestSerialization();
+            if (isAllowed)
+            {
+                FPS = 1f / Time.smoothDeltaTime;
+                /* LeftEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Left);
+                RightEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Right);
+                LeftEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Left);
+                RightEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Right); */
+                VRCPlayerApi localPlayer = Networking.LocalPlayer;
+                HeadPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+                HeadRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
+                LeftHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+                LeftHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).rotation;
+                RightHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+                RightHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).rotation;
+                RequestSerialization();
+            }
         }
 
         SendCustomEventDelayedSeconds(nameof(_Coroutine), UpdateInterval);

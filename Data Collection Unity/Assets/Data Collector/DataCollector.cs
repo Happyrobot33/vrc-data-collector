@@ -141,21 +141,21 @@ public class DataCollector : UdonSharpBehaviour
         collectedPlayerData.Add("is grounded", player.IsPlayerGrounded());
 
         //get the FPS data
-        GameObject[] playerobjects = player.GetPlayerObjects();
+        GameObject[] playerobjects = Networking.GetPlayerObjects(player);
 
         //find the player specific collector
         foreach (GameObject playerobject in playerobjects)
         {
-            PlayerSpecificCollector collector = playerobject.GetComponent<PlayerSpecificCollector>();
+            PlayerSpecificCollector collector = playerobject.GetComponentInChildren<PlayerSpecificCollector>();
             if (collector != null)
             {
                 collectedPlayerData.Add("fps", collector.FPS);
 
-                collectedPlayerData.Add("left eye position", EncodePosition(collector.LeftEyePosition));
+                /* collectedPlayerData.Add("left eye position", EncodePosition(collector.LeftEyePosition));
                 collectedPlayerData.Add("left eye rotation", EncodeQuaternion(collector.LeftEyeRotation));
 
                 collectedPlayerData.Add("right eye position", EncodePosition(collector.RightEyePosition));
-                collectedPlayerData.Add("right eye rotation", EncodeQuaternion(collector.RightEyeRotation));
+                collectedPlayerData.Add("right eye rotation", EncodeQuaternion(collector.RightEyeRotation)); */
 
                 collectedPlayerData.Add("head position", EncodePosition(collector.HeadPosition));
                 collectedPlayerData.Add("head rotation", EncodeQuaternion(collector.HeadRotation));

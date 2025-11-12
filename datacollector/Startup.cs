@@ -164,10 +164,10 @@ class Program
                             .Field("value", player.vr)
                             .Timestamp(time, WritePrecision.Ns));
                         points.Enqueue(EncodePosition("position", playername, player.position, time));
-                        points.Enqueue(EncodePosition("left_eye_position", playername, player.lefteyeposition, time));
+                        /* points.Enqueue(EncodePosition("left_eye_position", playername, player.lefteyeposition, time));
                         points.Enqueue(EncodeQuaternion("left_eye_rotation", playername, player.lefteyerotation, time));
                         points.Enqueue(EncodePosition("right_eye_position", playername, player.righteyeposition, time));
-                        points.Enqueue(EncodeQuaternion("right_eye_rotation", playername, player.righteyerotation, time));
+                        points.Enqueue(EncodeQuaternion("right_eye_rotation", playername, player.righteyerotation, time)); */
                         points.Enqueue(EncodePosition("head_position", playername, player.headposition, time));
                         points.Enqueue(EncodeQuaternion("head_rotation", playername, player.headrotation, time));
                         points.Enqueue(EncodePosition("right_hand_position", playername, player.righthandposition, time));

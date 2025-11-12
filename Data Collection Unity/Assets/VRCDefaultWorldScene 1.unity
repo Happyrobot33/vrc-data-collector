@@ -681,18 +681,22 @@ MonoBehaviour:
   RenderReflectionIntensity: 0
   RenderSkybox: {fileID: 0}
   NetworkIDs:
-  - gameObject: {fileID: 3480278762663670689}
+  - gameObject: {fileID: 367168013}
+    ID: 10
+    SerializedTypeNames:
+    - VRC.Udon.UdonBehaviour
+  - gameObject: {fileID: 5217956940845276395}
     ID: 11
     SerializedTypeNames:
     - VRC.Udon.UdonBehaviour
     - VRC.Udon.UdonBehaviour
   - gameObject: {fileID: 678950474}
-    ID: 13
+    ID: 12
     SerializedTypeNames:
     - VRC.SDK3.Components.VRCPlayerObject
     - VRC.Udon.UdonBehaviour
-  - gameObject: {fileID: 5217956940845276395}
-    ID: 10
+  - gameObject: {fileID: 3480278762663670689}
+    ID: 13
     SerializedTypeNames:
     - VRC.Udon.UdonBehaviour
     - VRC.Udon.UdonBehaviour
@@ -823,6 +827,10 @@ PrefabInstance:
       propertyPath: serializationData.Prefab
       value: 
       objectReference: {fileID: 1358623505415879843, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+    - target: {fileID: 1689148268490679004, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+      propertyPath: optionSelector
+      value: 
+      objectReference: {fileID: 367168015}
     - target: {fileID: 1689148268490679004, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
       propertyPath: serializationData.Prefab
       value: 
@@ -955,6 +963,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5333410622358950378, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+      propertyPath: serializationData.Prefab
+      value: 
+      objectReference: {fileID: 5333410622358950378, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+    - target: {fileID: 7027471499369473703, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+      propertyPath: serializationData.Prefab
+      value: 
+      objectReference: {fileID: 7027471499369473703, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
     - target: {fileID: 7215804967526101721, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1011,6 +1027,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8951773391407160111, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
+      propertyPath: serializationData.Prefab
+      value: 
+      objectReference: {fileID: 8951773391407160111, guid: 3b6fa6d36c6dff24b8e84ee57eb912ef, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
