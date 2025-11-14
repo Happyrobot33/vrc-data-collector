@@ -21,6 +21,7 @@ file_env() {
 }
 
 file_env 'USERNAME_HASH_SECRET'
+file_env 'INFLUXDB2_ADMIN_TOKEN'
 
 #run the script
 dotnet datacollector.dll

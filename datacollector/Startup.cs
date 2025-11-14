@@ -19,7 +19,16 @@ class Program
             Console.WriteLine($"Arg: {arg}");
         }
 
-        var influxService = new InfluxDBService();
+        //read in admin token
+        string? adminToken = Environment.GetEnvironmentVariable("INFLUXDB2_ADMIN_TOKEN");
+
+        if (string.IsNullOrEmpty(adminToken))
+        {
+            Console.WriteLine("INFLUXDB2_ADMIN_TOKEN environment variable not set. Exiting.");
+            return;
+        }
+
+        var influxService = new InfluxDBService(adminToken);
 
         //find the VRC log
         //TODO: This needs to be actively re-queried in case of log rotation
@@ -39,18 +48,27 @@ class Program
         //read from env variable
         string? secret = Environment.GetEnvironmentVariable("USERNAME_HASH_SECRET");
 
-        if (string.IsNullOrEmpty(secret))
+        if (string.IsNullOrEmpty(adminToken))
         {
             Console.WriteLine("USERNAME_HASH_SECRET environment variable not set. Exiting.");
             return;
         }
 
         //read the secret from the file
-        using HMACSHA512 hmac = new HMACSHA512(Encoding.UTF8.GetBytes(secret));
+        using HMACSHA512 hmac = new HMACSHA512(Encoding.UTF8.GetBytes(adminToken));
 
         string? machineName = Environment.GetEnvironmentVariable("MACHINE_NAME");
+        //this cant be empty, exit
+        if (string.IsNullOrEmpty(machineName))
+        {
+            Console.WriteLine("MACHINE_NAME environment variable not set. Exiting.");
+            return;
+        }
 
-        ConcurrentQueue<PointData> points = new ConcurrentQueue<PointData>();
+        ConcurrentDictionary<string, ConcurrentQueue<PointData>> points = new ConcurrentDictionary<string, ConcurrentQueue<PointData>>();
+
+        //initialize the dictionarys
+        const string systemInfoBucket = "system_monitoring";
 
         //spin up threads to flush data
         for (int i = 0; i < 10; i++)
@@ -58,46 +76,35 @@ class Program
             _ = Task.Run(() => FlushData(points, influxService));
         }
 
+
         //print out how many points are waiting to be in flight
         _ = Task.Run(async () =>
         {
-            bool bucketExists = false;
-            string systemInfoBucket = "system_monitoring";
-
-            if (bucketExists == false)
-            {
-                //ensure the system monitoring bucket exists
-                try
-                {
-                    await influxService.EnsureBucketAsync(systemInfoBucket, "org");
-                }
-                catch (InfluxDB.Client.Core.Exceptions.UnprocessableEntityException ex) when (ex.Message.Contains("bucket with name") && ex.Message.Contains("already exists"))
-                {
-                    //bucket exists
-                    bucketExists = true;
-                }
-            }
-
             while (true)
             {
-                //todo: write this into influxdb itself in a new bucket?
-                //maybe make each tag a different machine identifier
-                Console.WriteLine($"Points in queue: {points.Count}");
-
-                if (!string.IsNullOrEmpty(machineName))
+                //get all in que
+                int totalPoints = 0;
+                foreach (var queue in points.Values)
                 {
-                    //write system info point
-                    var sysPoint = PointData.Measurement("points_in_queue")
-                        .Tag("machine", machineName)
-                        .Field("value", points.Count)
-                        .Timestamp(DateTime.UtcNow, WritePrecision.Ns);
-                    
-                    influxService.Write(write =>
-                    {
-                        write.WritePoint(sysPoint, systemInfoBucket, "org");
-                    });
+                    totalPoints += queue.Count;
                 }
-                await Task.Delay(1000);
+
+                //only do this every second using utc time
+                if (DateTime.UtcNow.Millisecond % 1000 == 0)
+                {
+                    //Console.WriteLine($"Points in queue: {totalPoints}");
+                }
+
+                //write system info point
+                var sysPoint = PointData.Measurement("points_in_queue")
+                    .Tag("machine", machineName)
+                    .Field("value", totalPoints)
+                    .Timestamp(DateTime.UtcNow, WritePrecision.Ns);
+
+                QuePoint(points, systemInfoBucket, sysPoint);
+
+                //throttle this since this has no technical speed limit
+                await Task.Delay(100);
             }
         });
 
@@ -132,9 +139,17 @@ class Program
                     //convert the time from ticks to nanoseconds
                     var time = new DateTime(data.utctime);
 
-                    targetBucket = data.worldid;
+                    var targetBucket = data.worldid;
 
-                    //need to find a way to include global data here
+                    //add some general data to system info
+                    QuePoint(points, systemInfoBucket, PointData.Measurement("players_in_world")
+                            .Tag("machine", machineName)
+                            .Field("value", data.totalplayers)
+                            .Timestamp(time, WritePrecision.Ns));
+                    QuePoint(points, systemInfoBucket, PointData.Measurement("players_collected")
+                            .Tag("machine", machineName)
+                            .Field("value", data.playerdatacollected.Count)
+                            .Timestamp(time, WritePrecision.Ns));
 
                     //foreach player
                     foreach (var player in data.playerdatacollected)
@@ -147,39 +162,50 @@ class Program
                             throw new Exception("Failed to hash player name");
                         }
 
-                        points.Enqueue(PointData.Measurement("fps")
+                        QuePoint(points, targetBucket, PointData.Measurement("fps")
                             .Tag("user", playername)
                             .Field("value", player.fps)
                             .Timestamp(time, WritePrecision.Ns));
-                        points.Enqueue(PointData.Measurement("rotation")
+                        QuePoint(points, targetBucket, PointData.Measurement("rotation")
                             .Tag("user", playername)
                             .Field("value", player.rotation)
                             .Timestamp(time, WritePrecision.Ns));
-                        points.Enqueue(PointData.Measurement("size")
+                        QuePoint(points, targetBucket, PointData.Measurement("size")
                             .Tag("user", playername)
                             .Field("value", player.size)
                             .Timestamp(time, WritePrecision.Ns));
-                        points.Enqueue(PointData.Measurement("vr")
+                        QuePoint(points, targetBucket, PointData.Measurement("vr")
                             .Tag("user", playername)
                             .Field("value", player.vr)
                             .Timestamp(time, WritePrecision.Ns));
-                        points.Enqueue(EncodePosition("position", playername, player.position, time));
+                        QuePoint(points, targetBucket, EncodePosition("position", playername, player.position, time));
                         /* points.Enqueue(EncodePosition("left_eye_position", playername, player.lefteyeposition, time));
                         points.Enqueue(EncodeQuaternion("left_eye_rotation", playername, player.lefteyerotation, time));
                         points.Enqueue(EncodePosition("right_eye_position", playername, player.righteyeposition, time));
                         points.Enqueue(EncodeQuaternion("right_eye_rotation", playername, player.righteyerotation, time)); */
-                        points.Enqueue(EncodePosition("head_position", playername, player.headposition, time));
-                        points.Enqueue(EncodeQuaternion("head_rotation", playername, player.headrotation, time));
-                        points.Enqueue(EncodePosition("right_hand_position", playername, player.righthandposition, time));
-                        points.Enqueue(EncodeQuaternion("right_hand_rotation", playername, player.righthandrotation, time));
-                        points.Enqueue(EncodePosition("left_hand_position", playername, player.lefthandposition, time));
-                        points.Enqueue(EncodeQuaternion("left_hand_rotation", playername, player.lefthandrotation, time));
+                        QuePoint(points, targetBucket, EncodePosition("head_position", playername, player.headposition, time));
+                        QuePoint(points, targetBucket, EncodeQuaternion("head_rotation", playername, player.headrotation, time));
+                        QuePoint(points, targetBucket, EncodePosition("right_hand_position", playername, player.righthandposition, time));
+                        QuePoint(points, targetBucket, EncodeQuaternion("right_hand_rotation", playername, player.righthandrotation, time));
+                        QuePoint(points, targetBucket, EncodePosition("left_hand_position", playername, player.lefthandposition, time));
+                        QuePoint(points, targetBucket, EncodeQuaternion("left_hand_rotation", playername, player.lefthandrotation, time));
 
                         //Console.WriteLine($"Wrote data for player {playername}");
                     }
                 }
             }
         }
+    }
+
+    private static void QuePoint(ConcurrentDictionary<string, ConcurrentQueue<PointData>> points, string bucketName, PointData point)
+    {
+        points.AddOrUpdate(bucketName,
+                                new ConcurrentQueue<PointData>(new[] { point }),
+                                (key, existingQueue) =>
+                                {
+                                    existingQueue.Enqueue(point);
+                                    return existingQueue;
+                                });
     }
 
     private static PointData EncodePosition(string measurement, string userTag, Position position, DateTime time)
@@ -203,66 +229,66 @@ class Program
             .Timestamp(time, WritePrecision.Ns);
     }
 
-    static string targetBucket = "";
-
-    public static async Task FlushData(ConcurrentQueue<PointData> points, InfluxDBService influxService)
+    public static async Task FlushData(ConcurrentDictionary<string, ConcurrentQueue<PointData>> points, InfluxDBService influxService)
     {
-        bool bucketExists = false;
+        Dictionary<string, bool> bucketExistsDict = new Dictionary<string, bool>();
 
         while (true)
         {
-            //make sure target bucket is set
-            if (string.IsNullOrEmpty(targetBucket))
+            //get a list of keys
+            foreach (var key in points.Keys)
             {
-                await Task.Delay(1000);
-                continue;
-            }
+                //get the point list
+                var pointList = points.GetOrAdd(key, new ConcurrentQueue<PointData>());
 
-            //only flush when we clear a threshold of points
-            if (points.Count < 1000)
-            {
-                await Task.Delay(500);
-                continue;
-            }
-
-            //collect into a list
-            List<PointData> pointsToWrite = new List<PointData>();
-            while (points.TryDequeue(out var point))
-            {
-                pointsToWrite.Add(point);
-            }
-
-            //flush to the database
-
-            //ensure bucket
-            if (!string.IsNullOrEmpty(targetBucket) && bucketExists == false)
-            {
-                //catch that the bucket already exists, and set our flag for that
-                try
+                //make sure target bucket is set
+                if (string.IsNullOrEmpty(key))
                 {
-                    await influxService.EnsureBucketAsync(targetBucket, "org");
+                    await Task.Delay(100);
+                    continue;
                 }
-                catch (InfluxDB.Client.Core.Exceptions.UnprocessableEntityException ex) when (ex.Message.Contains("bucket with name") && ex.Message.Contains("already exists"))
+
+                //only flush when we clear a threshold of points
+                if (pointList.Count < 1000)
                 {
-                    //bucket exists
-                    bucketExists = true;
+                    continue;
                 }
+
+                //collect into a list
+                List<PointData> pointsToWrite = new List<PointData>();
+                while (pointList.TryDequeue(out var point))
+                {
+                    pointsToWrite.Add(point);
+                }
+
+
+                if (!bucketExistsDict.ContainsKey(key))
+                {
+                    bucketExistsDict[key] = false;
+                }
+
+                //ensure bucket
+                if (bucketExistsDict[key] == false)
+                {
+                    var exists = await influxService.EnsureBucketAsync(key, "org");
+                    bucketExistsDict[key] = exists;
+                }
+
+                influxService.Write(write =>
+                {
+                    //Console.WriteLine($"Point threshold reached, Writing {pointsToWrite.Count} points to bucket {targetBucket}...");
+                    try
+                    {
+
+                        write.WritePoints(pointsToWrite, key, "org");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error writing points: {ex.Message}");
+                    }
+                });
+                //Console.WriteLine($"Flush complete");
             }
-
-            influxService.Write(write =>
-            {
-                //Console.WriteLine($"Point threshold reached, Writing {pointsToWrite.Count} points to bucket {targetBucket}...");
-                try
-                {
-
-                    write.WritePoints(pointsToWrite, targetBucket, "org");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error writing points: {ex.Message}");
-                }
-            });
-            //Console.WriteLine($"Flush complete");
         }
     }
 

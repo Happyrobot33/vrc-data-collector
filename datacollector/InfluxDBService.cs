@@ -10,9 +10,9 @@ namespace Services
     {
         private readonly string _token;
 
-        public InfluxDBService()
+        public InfluxDBService(string token)
         {
-            _token = "admin-token";
+            _token = token;
         }
 
         public void Write(Action<WriteApi> action)
@@ -29,7 +29,7 @@ namespace Services
             return await action(query);
         }
 
-        public async Task EnsureBucketAsync(string bucketName, string org)
+        public async Task<bool> EnsureBucketAsync(string bucketName, string org)
         {
             Console.WriteLine($"Ensuring bucket '{bucketName}' exists...");
             //get the ID of the org
@@ -38,15 +38,29 @@ namespace Services
             var organization = orgs.Find(o => o.Name == org);
             if (organization == null)
             {
-                Console.WriteLine($"Organization '{org}' not found.");
-                return;
+                throw new Exception($"Organization '{org}' not found.");
+                return false;
             }
+            //ask to see if the bucket exists
+            var buckets = await client.GetBucketsApi().FindBucketsAsync(name: bucketName);
+            if (buckets.Count > 0)
+            {
+                Console.WriteLine($"Bucket '{bucketName}' already exists.");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"Bucket '{bucketName}' does not exist. Creating...");
+            }
+
             // Prepare the bucket object
             var bucket = new Bucket(name: bucketName, orgID: organization.Id, retentionRules: new List<BucketRetentionRules>());
 
             // Create the bucket
             var createdBucket = await client.GetBucketsApi().CreateBucketAsync(bucket);
             Console.WriteLine($"Bucket '{createdBucket.Name}' created successfully with ID: {createdBucket.Id}");
+
+            return true;
         }
     }
 }

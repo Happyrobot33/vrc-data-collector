@@ -10,9 +10,11 @@ services:
     hostname: datacollector
     environment:
       USERNAME_HASH_SECRET_FILE: /run/secrets/username-hash-secret
+      INFLUXDB2_ADMIN_TOKEN_FILE: /run/secrets/influxdb2-admin-token
       MACHINE_NAME: Happyrobot33-PC
     secrets:
       - username-hash-secret
+      - influxdb2-admin-token
     #bind the vrchat log folder
     volumes:
       - type: bind
@@ -30,7 +32,7 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD_FILE: /run/secrets/influxdb2-admin-password
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE: /run/secrets/influxdb2-admin-token
       DOCKER_INFLUXDB_INIT_ORG: org
-      #DOCKER_INFLUXDB_INIT_BUCKET: collected-data #no initial bucket, we make a bucket per world id
+      DOCKER_INFLUXDB_INIT_BUCKET: system_monitoring #only garunteed bucket
     volumes:
       - type: volume
         source: influxdb2-data
