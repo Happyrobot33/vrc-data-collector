@@ -238,15 +238,15 @@ class Program
             //get a list of keys
             foreach (var key in points.Keys)
             {
-                //get the point list
-                var pointList = points.GetOrAdd(key, new ConcurrentQueue<PointData>());
-
                 //make sure target bucket is set
                 if (string.IsNullOrEmpty(key))
                 {
                     await Task.Delay(100);
                     continue;
                 }
+                
+                //get the point list
+                var pointList = points.GetOrAdd(key, new ConcurrentQueue<PointData>());
 
                 //only flush when we clear a threshold of points
                 if (pointList.Count < 1000)
