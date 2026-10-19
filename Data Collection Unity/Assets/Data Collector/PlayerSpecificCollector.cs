@@ -1,4 +1,5 @@
 ﻿
+using System;
 using TMPro;
 using UdonSharp;
 using UnityEngine;
@@ -9,62 +10,102 @@ using VRC.SDK3.Persistence;
 using UnityEngine.UI;
 using VRC.SDK3.Rendering;
 
-//[RequireComponent(typeof(VRCPlayerObject))]
-[UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
-public class PlayerSpecificCollector : UdonSharpBehaviour
+namespace DataCollector
 {
-    [UdonSynced]
-    public float FPS;
-
-    [UdonSynced]
-    public Vector3 LeftHandPosition = Vector3.zero;
-    [UdonSynced]
-    public Vector3 RightHandPosition = Vector3.zero;
-
-    [UdonSynced]
-    public Quaternion LeftHandRotation = Quaternion.identity;
-    [UdonSynced]
-    public Quaternion RightHandRotation = Quaternion.identity;
-
-    [UdonSynced]
-    public Vector3 HeadPosition = Vector3.zero;
-    [UdonSynced]
-    public Quaternion HeadRotation = Quaternion.identity;
-
-    const float UpdateInterval = 0.5f;
-
-    void Start()
+    public enum PositionIndex
     {
-        //check if the local player owns this object
-        if (Networking.GetOwner(gameObject) == Networking.LocalPlayer)
-        {
-            //start the coroutine
-            _Coroutine();
-        }
+        LeftHand = 0,
+        RightHand = 1,
+        Head = 2,
+        LeftEye = 3,
+        RightEye = 4
     }
 
-    public void _Coroutine()
+    public enum RotationIndex
     {
-        if (PlayerData.TryGetBool(Networking.LocalPlayer, GDPRComplianceControl.Key, out bool isAllowed))
+        LeftHand = 0,
+        RightHand = 1,
+        Head = 2,
+        LeftEye = 3,
+        RightEye = 4
+    }
+
+    //[RequireComponent(typeof(VRCPlayerObject))]
+    [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
+    public class PlayerSpecificCollector : UdonSharpBehaviour
+    {
+        [UdonSynced]
+        public float FPS;
+
+        //These are arrays to work around some weird synching behaviour with many composite fields
+
+        //position values
+        //Left Hand Position
+        //Right Hand Position
+        //Head Position
+        //Left Eye Position
+        //Right Eye Position
+        [UdonSynced]
+        public Vector3[] Positions = new Vector3[5];
+        
+        //rotation values
+        //Left Hand Rotation
+        //Right Hand Rotation
+        //Head Rotation
+        //Left Eye Rotation
+        //Right Eye Rotation
+        [UdonSynced]
+        public Quaternion[] Rotations = new Quaternion[5];
+
+        const float UpdateInterval = 0.1f;
+
+        public void Start()
         {
-            if (isAllowed)
+            //check if the local player owns this object
+            if (Networking.GetOwner(gameObject) == Networking.LocalPlayer)
             {
-                FPS = 1f / Time.smoothDeltaTime;
-                /* LeftEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Left);
-                RightEyePosition = VRCCameraSettings.GetEyePosition(Camera.StereoscopicEye.Right);
-                LeftEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Left);
-                RightEyeRotation = VRCCameraSettings.GetEyeRotation(Camera.StereoscopicEye.Right); */
-                VRCPlayerApi localPlayer = Networking.LocalPlayer;
-                HeadPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-                HeadRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
-                LeftHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
-                LeftHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).rotation;
-                RightHandPosition = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
-                RightHandRotation = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).rotation;
-                RequestSerialization();
+                //start the coroutine
+                _Coroutine();
             }
         }
 
-        SendCustomEventDelayedSeconds(nameof(_Coroutine), UpdateInterval);
+        public void _Coroutine()
+        {
+            if (PlayerData.TryGetBool(Networking.LocalPlayer, GDPRComplianceControl.Key, out bool isAllowed))
+            {
+                if (isAllowed)
+                {
+                    FPS = 1f / Time.smoothDeltaTime;
+                    VRCPlayerApi localPlayer = Networking.LocalPlayer;
+                    Positions[(int)PositionIndex.Head] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+                    Rotations[(int)RotationIndex.Head] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
+                    Positions[(int)PositionIndex.LeftHand] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+                    Rotations[(int)RotationIndex.LeftHand] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).rotation;
+                    Positions[(int)PositionIndex.RightHand] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+                    Rotations[(int)RotationIndex.RightHand] = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).rotation;
+                    Positions[(int)PositionIndex.LeftEye] = localPlayer.GetBonePosition(HumanBodyBones.LeftEye);
+                    Rotations[(int)RotationIndex.LeftEye] = localPlayer.GetBoneRotation(HumanBodyBones.LeftEye);
+                    Positions[(int)PositionIndex.RightEye] = localPlayer.GetBonePosition(HumanBodyBones.RightEye);
+                    Rotations[(int)RotationIndex.RightEye] = localPlayer.GetBoneRotation(HumanBodyBones.RightEye);
+                    RequestSerialization();
+
+                    Debug.Log("LocalLogger" 
+                    + " utcTime:" + DateTime.UtcNow.Ticks
+                    + " Head Pos:" + Positions[(int)PositionIndex.Head].ToString()
+                    + " Head Rot:" + Rotations[(int)RotationIndex.Head].ToString()
+                    + " HandL Pos:" + Positions[(int)PositionIndex.LeftHand].ToString()
+                    + " HandL Rot:" + Rotations[(int)RotationIndex.LeftHand].ToString()
+                    + " HandR Pos:" + Positions[(int)PositionIndex.RightHand].ToString()
+                    + " HandR Rot:" + Rotations[(int)RotationIndex.RightHand].ToString()
+                    + " EyeL Pos:" + Positions[(int)PositionIndex.LeftEye].ToString()
+                    + " EyeL Rot:" + Rotations[(int)RotationIndex.LeftEye].ToString()
+                    + " EyeR Pos:" + Positions[(int)PositionIndex.RightEye].ToString()
+                    + " EyeR Rot:" + Rotations[(int)RotationIndex.RightEye].ToString()
+                    );
+                }
+            }
+
+            SendCustomEventDelayedSeconds(nameof(_Coroutine), UpdateInterval);
+        }
     }
 }

@@ -179,10 +179,10 @@ class Program
                             .Field("value", player.vr)
                             .Timestamp(time, WritePrecision.Ns));
                         QuePoint(points, targetBucket, EncodePosition("position", playername, player.position, time));
-                        /* points.Enqueue(EncodePosition("left_eye_position", playername, player.lefteyeposition, time));
-                        points.Enqueue(EncodeQuaternion("left_eye_rotation", playername, player.lefteyerotation, time));
-                        points.Enqueue(EncodePosition("right_eye_position", playername, player.righteyeposition, time));
-                        points.Enqueue(EncodeQuaternion("right_eye_rotation", playername, player.righteyerotation, time)); */
+                        QuePoint(points, targetBucket, EncodePosition("left_eye_position", playername, player.lefteyeposition, time));
+                        QuePoint(points, targetBucket, EncodeQuaternion("left_eye_rotation", playername, player.lefteyerotation, time));
+                        QuePoint(points, targetBucket, EncodePosition("right_eye_position", playername, player.righteyeposition, time));
+                        QuePoint(points, targetBucket, EncodeQuaternion("right_eye_rotation", playername, player.righteyerotation, time));
                         QuePoint(points, targetBucket, EncodePosition("head_position", playername, player.headposition, time));
                         QuePoint(points, targetBucket, EncodeQuaternion("head_rotation", playername, player.headrotation, time));
                         QuePoint(points, targetBucket, EncodePosition("right_hand_position", playername, player.righthandposition, time));
